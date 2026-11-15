@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Habit Tracker</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --card: #f5f5f5;
+            --text: #111111;
+            --border: #dddddd;
+            --heat0: #ebedf0;
+            --heat1: #9be9a8;
+            --heat2: #40c463;
+            --heat3: #30a14e;
+            --heat4: #216e39;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0d1117;
+                --card: #161b22;
+                --text: #e6edf3;
+                --border: #30363d;
+                --heat0: #2d333b;
+                --heat1: #0e4429;
+                --heat2: #006d32;
+                --heat3: #26a641;
+                --heat4: #39d353;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input[type=text] {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: inherit;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s ease;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .add-btn {
+            background: #2ea043;
+            color: #fff;
+        }
+
+        .delete-btn {
+            background: #da3633;
+            color: #fff;
+        }
+
+        .export-btn {
+            background: #1f6feb;
+            color: #fff;
+        }
+
+        .import-btn {
+            background: #6e40c9;
+            color: #fff;
+        }
+
+        .history-btn {
+            background: #58a6ff;
+            color: #fff;
+        }
+
+        .edit-btn {
+            background: #e3b341;
+            color: #111;
+        }
+
+        .edit-input {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: inherit;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .task-wrapper {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .task {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .task-left {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .heatmap {
+            overflow-x: auto;
+            padding: 4px 0 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-rows: repeat(7, 16px);
+            grid-auto-flow: column;
+            grid-auto-columns: 16px;
+            gap: 4px;
+            width: max-content;
+        }
+
+        .day {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .level0 {
+            background: var(--heat0);
+        }
+
+        .level1 {
+            background: var(--heat1);
+        }
+
+        .level2 {
+            background: var(--heat2);
+        }
+
+        .level3 {
+            background: var(--heat3);
+        }
+
+        .level4 {
+            background: var(--heat4);
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            margin-top: 10px;
+            opacity: 0.7;
+        }
+
+        .legend-day {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .habit-stats {
+            font-size: 12px;
+            opacity: .7;
+            padding: 4px 0 8px 0;
+        }
+
+        .habit-heatmap-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .habit-heatmap-panel.open {
+            max-height: 500px;
+            padding: 8px 0 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Daily Habit Tracker</h1>
+        <div class="card" id="globalSummaryCard" style="display: none;">
+            <h2 style="font-size: 1.25rem; margin-bottom: 8px;">Global Activity Dashboard</h2>
+            <div class="heatmap">
+                <div class="grid" id="globalGrid"></div>
+            </div>
+            <div class="legend">
+                <span>Less</span>
+                <div class="legend-day level0"></div>
+                <div class="legend-day level1"></div>
+                <div class="legend-day level2"></div>
+                <div class="legend-day level3"></div>
+                <div class="legend-day level4"></div>
+                <span>More</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="input-row">
+                <input id="taskInput" type="text" placeholder="Add a habit..."
+                    onkeydown="if(event.key==='Enter') addTask()">
+                <button class="add-btn" onclick="addTask()">Add Habit</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Habits</h2>
+            <div id="taskList"></div>
+        </div>
+
+        <div class="card">
+            <h2>Backup & Restore</h2>
+            <div class="input-row">
+                <button class="export-btn" onclick="exportData()">Export backup</button>
+                <button class="import-btn" onclick="document.getElementById('importFile').click()">Import
+                    backup</button>
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = "habitTrackerData";
+        let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || { tasks: [], log: {} };
+        let openHeatmapId = null, editingTaskId = null;
+
+        function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+        function formatDate(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+        function today() { return formatDate(new Date()); }
+        function generateUniqueId() { return Date.now().toString() + Math.floor(Math.random() * 1000); }
+
+        function addTask() {
+            const input = document.getElementById("taskInput");
+            if (!input.value.trim()) return;
+            data.tasks.push({ id: generateUniqueId(), name: input.value.trim() });
+            input.value = "";
+            save(); render();
+        }
+
+        function toggleTask(id, checked) {
+            const date = today();
+            if (!data.log[date]) data.log[date] = {};
+            if (checked) data.log[date][id] = true;
+            else delete data.log[date][id];
+            save();
+            renderGlobalHeatmap();
+            if (openHeatmapId === id) renderHabitHeatmap(id);
+        }
+
+        function renderGlobalHeatmap() {
+            const grid = document.getElementById("globalGrid");
+            const card = document.getElementById("globalSummaryCard");
+            if (data.tasks.length === 0) { card.style.display = "none"; return; }
+            card.style.display = "block";
+            grid.innerHTML = "";
+            const now = new Date();
+            for (let i = 111; i >= 0; i--) {
+                const d = new Date(now); d.setDate(d.getDate() - i);
+                const ds = formatDate(d);
+                let count = 0;
+                data.tasks.forEach(t => { if (data.log[ds]?.[t.id]) count++; });
+                let intensity = count === 0 ? 0 : Math.ceil((count / data.tasks.length) * 4);
+                grid.innerHTML += `<div class="day level${intensity}" title="${ds}: ${count} tasks"></div>`;
+            }
+        }
+
+        function renderHabitHeatmap(id) {
+            const grid = document.getElementById("grid-" + id);
+            const stats = document.getElementById("hstats-" + id);
+            if (!grid) return;
+            grid.innerHTML = "";
+            const now = new Date();
+            let completed = 0;
+            for (let i = 111; i >= 0; i--) {
+                const d = new Date(now); d.setDate(d.getDate() - i);
+                const ds = formatDate(d);
+                const done = data.log[ds]?.[id];
+                if (done) completed++;
+                grid.innerHTML += `<div class="day ${done ? "level4" : "level0"}" title="${ds}"></div>`;
+            }
+            stats.textContent = `${completed} days completed in the last 16 weeks`;
+        }
+
+        function handleEdit(id) { editingTaskId = id; render(); }
+        function commitEdit(id) {
+            const input = document.getElementById("edit-" + id);
+            const task = data.tasks.find(t => t.id === id);
+            if (task && input.value.trim()) task.name = input.value.trim();
+            editingTaskId = null;
+            save(); render();
+        }
+        function cancelEdit() { editingTaskId = null; render(); }
+
+        function toggleHistory(id, btn) {
+            const panel = document.getElementById("panel-" + id);
+            panel.classList.toggle("open");
+            if (panel.classList.contains("open")) { openHeatmapId = id; renderHabitHeatmap(id); btn.textContent = "Close"; }
+            else { openHeatmapId = null; btn.textContent = "History"; }
+        }
+
+        function deleteTask(id) {
+            if (!confirm("Delete this habit?")) return;
+            data.tasks = data.tasks.filter(t => t.id !== id);
+            save(); render();
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+            const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+            a.download = "habit-backup.json"; a.click();
+        }
+
+        function importData(e) {
+            const reader = new FileReader();
+            reader.onload = (x) => { data = JSON.parse(x.target.result); save(); render(); };
+            reader.readAsText(e.target.files[0]);
+        }
+
+        function render() {
+            const list = document.getElementById("taskList");
+            list.innerHTML = "";
+            data.tasks.forEach(t => {
+                const isEditing = editingTaskId === t.id;
+                const div = document.createElement("div");
+                div.className = "task-wrapper";
+                div.innerHTML = `
+                    <div class="task">
+                        <div class="task-left">
+                            <input type="checkbox" ${data.log[today()]?.[t.id] ? "checked" : ""} onchange="toggleTask('${t.id}', this.checked)">
+                            ${isEditing ? `<input class="edit-input" id="edit-${t.id}" value="${t.name}">` : `<span>${t.name}</span>`}
+                        </div>
+                        <div class="task-actions">
+                            <button class="history-btn" onclick="toggleHistory('${t.id}', this)">History</button>
+                            ${isEditing ? `<button onclick="commitEdit('${t.id}')">Save</button><button onclick="cancelEdit()">Cancel</button>`
+                        : `<button class="edit-btn" onclick="handleEdit('${t.id}')">Edit</button>`}
+                            <button class="delete-btn" onclick="deleteTask('${t.id}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="habit-heatmap-panel" id="panel-${t.id}">
+                        <div class="heatmap"><div class="grid" id="grid-${t.id}"></div></div>
+                        <div class="habit-stats" id="hstats-${t.id}"></div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            renderGlobalHeatmap();
+        }
+        render();
+    </script>
+</body>
+
+</html>
