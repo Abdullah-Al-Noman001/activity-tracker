@@ -1,6 +1,6 @@
 # Daily Habit Tracker
 
-A lightweight, browser-based habit tracker built with plain HTML, CSS, and JavaScript. It helps you record daily progress and review your consistency over time.
+A lightweight, browser-based habit tracker built with plain HTML, CSS, and JavaScript. Add habits, record daily progress, and review your consistency over time.
 
 ## Features
 
@@ -11,6 +11,12 @@ A lightweight, browser-based habit tracker built with plain HTML, CSS, and JavaS
 - Export your data to a JSON backup and import it later.
 - Save data in the browser with `localStorage`.
 - Adapt to the device's light or dark appearance setting.
+
+## Project files
+
+- `index.html` contains the page structure.
+- `styles.css` contains the layout, colors, heatmaps, and responsive styles.
+- `app.js` contains habit management, history, and backup/restore behavior.
 
 ## Run locally
 
@@ -34,3 +40,5 @@ Habit names and completion history are saved in the current browser's local stor
 - CSS
 - Vanilla JavaScript
 - Browser `localStorage` and File APIs
+
+No external libraries or build step are required.
